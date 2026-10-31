@@ -1,4 +1,8 @@
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://localhost:1337";
+// Trên server ưu tiên STRAPI_URL (URL nội bộ, vd. http://cms:1337 trong Docker).
+const STRAPI_URL =
+  (typeof window === "undefined" ? process.env.STRAPI_URL : undefined) ??
+  process.env.NEXT_PUBLIC_STRAPI_URL ??
+  "http://localhost:1337";
 
 export interface Word {
   id: number;

@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+.tmp
+.cache
+.strapi
+.env
+.env.*
+!.env.example
+public/uploads/*
+!public/uploads/.gitkeep
+npm-debug.log*
+.git
+Dockerfile
+.dockerignore

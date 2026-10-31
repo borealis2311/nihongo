@@ -1,4 +1,6 @@
-import { Search } from "lucide-react";
+import Link from "next/link";
+import { Camera, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/docs/theme-toggle";
 
@@ -20,6 +22,14 @@ export function SiteHeader() {
             className="h-9 rounded-lg border-border bg-input pl-9 text-sm"
           />
         </div>
+        <Button
+          render={<Link href="/import" />}
+          variant="outline"
+          size="icon"
+          title="Nhập từ vựng từ ảnh"
+        >
+          <Camera />
+        </Button>
         <ThemeToggle />
       </div>
     </header>
