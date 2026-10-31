@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "words",
+  "info": {
+    "singularName": "word",
+    "pluralName": "words",
+    "displayName": "Word",
+    "description": "Từ vựng - thuộc 1 Bài học"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "word": {
+      "type": "string",
+      "required": true
+    },
+    "hiragana": {
+      "type": "string"
+    },
+    "katakana": {
+      "type": "string"
+    },
+    "romaji": {
+      "type": "string"
+    },
+    "sentence": {
+      "type": "boolean",
+      "default": false
+    },
+    "order": {
+      "type": "integer",
+      "default": 0
+    },
+    "lesson": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::lesson.lesson",
+      "inversedBy": "words"
+    }
+  }
+}

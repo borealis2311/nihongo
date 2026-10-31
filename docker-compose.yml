@@ -1,0 +1,70 @@
+name: nihongo
+
+services:
+  cms:
+    build:
+      context: ./cms
+    container_name: nihongo-cms
+    restart: unless-stopped
+    env_file: ./cms/.env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      NODE_ENV: production
+    ports:
+      - "${CMS_PORT:-1337}:1337"
+    volumes:
+      - cms_uploads:/opt/app/public/uploads
+
+  client:
+    build:
+      context: ./client
+      args:
+        # URL trình duyệt dùng để gọi Strapi (nhúng vào bundle lúc build).
+        NEXT_PUBLIC_STRAPI_URL: ${PUBLIC_STRAPI_URL:-http://localhost:1337}
+    container_name: nihongo-client
+    restart: unless-stopped
+    env_file: ./client/.env
+    environment:
+      # Server Next.js gọi Strapi qua mạng nội bộ của Docker.
+      STRAPI_URL: http://cms:1337
+    ports:
+      - "${CLIENT_PORT:-3000}:3000"
+    depends_on:
+      - cms
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION:-latest}
+    container_name: nihongo-n8n
+    restart: unless-stopped
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      N8N_EDITOR_BASE_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      # Khoá mã hoá credentials - phải giữ cố định, mất là không giải mã được credentials cũ.
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?Cần đặt N8N_ENCRYPTION_KEY trong .env}
+      # Chạy qua http (localhost) thì phải tắt secure cookie, bật lại khi có HTTPS.
+      N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE:-false}
+      GENERIC_TIMEZONE: ${TZ:-Asia/Ho_Chi_Minh}
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+      N8N_DEFAULT_LOCALE: en
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: 168 # giờ (7 ngày)
+      # Workflow trong n8n gọi Strapi bằng http://cms:1337
+      STRAPI_URL: http://cms:1337
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - cms
+
+volumes:
+  cms_uploads:
+  n8n_data:
