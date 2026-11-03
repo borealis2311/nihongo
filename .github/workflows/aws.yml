@@ -29,15 +29,15 @@ jobs:
           - app: nextjs
             context: client
             repository: nihongo-app-ui
-            service: nextjs-service
-            container: nextjs
+            service: nihongo-app-ui-service-t8zlkkgi
+            container: nihongo-app-ui
             task_family: nihongo-app-ui
 
           - app: strapi
             context: cms
             repository: nihongo-app-cms
-            service: strapi-service
-            container: strapi
+            service: nihongo-app-cms-service-lt63a5gl
+            container: nihongo-app-cms
             task_family: nihongo-app-cms
 
     steps:
