@@ -1,0 +1,105 @@
+
+name: Deploy Next.js and Strapi to ECS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ecs-production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-southeast-2
+  ECS_CLUSTER: precious-ostrich-ump49z
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: nextjs
+            repository: nihongo-app-ui
+            service: nextjs-service
+            container: nextjs
+            task_family: nihongo-app-ui
+
+          - app: strapi
+            repository: nihongo-app-cms
+            service: strapi-service
+            container: strapi
+            task_family: nihongo-app-cms
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        id: build
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ matrix.repository }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+
+          docker build \
+            -t "$IMAGE" \
+            "./${{ matrix.app }}"
+
+          docker push "$IMAGE"
+
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Download current ECS task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "${{ matrix.task_family }}" \
+            --query taskDefinition \
+            > task-definition.json
+
+          jq 'del(
+            .taskDefinitionArn,
+            .revision,
+            .status,
+            .requiresAttributes,
+            .compatibilities,
+            .registeredAt,
+            .registeredBy,
+            .deregisteredAt
+          )' task-definition.json > clean-task.json
+
+      - name: Render new task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: clean-task.json
+          container-name: ${{ matrix.container }}
+          image: ${{ steps.build.outputs.image }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: ${{ matrix.service }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
