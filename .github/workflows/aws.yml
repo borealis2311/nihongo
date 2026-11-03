@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
@@ -28,12 +27,14 @@ jobs:
       matrix:
         include:
           - app: nextjs
+            context: client
             repository: nihongo-app-ui
             service: nextjs-service
             container: nextjs
             task_family: nihongo-app-ui
 
           - app: strapi
+            context: cms
             repository: nihongo-app-cms
             service: strapi-service
             container: strapi
@@ -46,7 +47,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          # Tài khoản này bị SCP chặn OIDC provider nên dùng access key của IAM user.
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -59,12 +62,24 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ matrix.repository }}
           IMAGE_TAG: ${{ github.sha }}
+          # NEXT_PUBLIC_* được nhúng vào bundle lúc build, nên phải truyền qua build arg.
+          NEXT_PUBLIC_STRAPI_URL: ${{ vars.NEXT_PUBLIC_STRAPI_URL }}
         run: |
           IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
 
+          BUILD_ARGS=()
+          if [ "${{ matrix.app }}" = "nextjs" ]; then
+            if [ -z "$NEXT_PUBLIC_STRAPI_URL" ]; then
+              echo "::error::Chưa đặt repository variable NEXT_PUBLIC_STRAPI_URL"
+              exit 1
+            fi
+            BUILD_ARGS+=(--build-arg "NEXT_PUBLIC_STRAPI_URL=$NEXT_PUBLIC_STRAPI_URL")
+          fi
+
           docker build \
+            "${BUILD_ARGS[@]}" \
             -t "$IMAGE" \
-            "./${{ matrix.app }}"
+            "./${{ matrix.context }}"
 
           docker push "$IMAGE"
 
