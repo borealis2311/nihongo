@@ -36,7 +36,7 @@ export function LearnClient({ library, lessonId }: { library: Library; lessonId:
             initialQueue={pool.filter((p) => !cards[p.id]).slice(0, 10)}
             title={lesson?.name ?? "Từ mới"}
             subtitle="Lật thẻ, rồi chọn Đã nhớ hoặc Chưa nhớ"
-            emptyMessage="Bạn đã học hết thẻ trong bài này. Vào Ôn từ để ôn lại nhé."
+            emptyMessage="Bạn đã học hết thẻ trong bài này. Mở tài liệu bài học để xem lại toàn bộ nhé."
             onMore={pool.some((p) => !cards[p.id]) ? () => setRound((r) => r + 1) : undefined}
             moreLabel="Học tiếp 10 thẻ"
           />

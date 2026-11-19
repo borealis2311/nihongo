@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Layers, Search } from "lucide-react";
+import { ArrowRight, Camera, Search } from "lucide-react";
 import { EmptyLibrary } from "@/components/app/empty-library";
 import { FlashcardDeck } from "@/components/study/flashcard-deck";
 import { MeaningQuiz } from "@/components/study/meaning-quiz";
 import { SpeakButton } from "@/components/study/speak-button";
 import { StatusBadge } from "@/components/study/status-badge";
 import { lessonStats } from "@/lib/library";
-import { isDue, isSameDay, statusOf, useStudy, useStudyHydrated } from "@/lib/study-store";
+import { isSameDay, statusOf, useStudy, useStudyHydrated } from "@/lib/study-store";
 import type { Library } from "@/lib/strapi";
 import { greeting, jpText } from "@/lib/text";
 import { cn } from "@/lib/utils";
@@ -36,12 +36,6 @@ export function HomeClient({ library }: { library: Library }) {
         .slice(0, 4),
     [items]
   );
-
-  const dueItems = useMemo(() => {
-    if (!hydrated) return [];
-    const now = new Date();
-    return items.filter((i) => isDue(cards[i.id], now));
-  }, [items, cards, hydrated]);
 
   const favoriteItems = useMemo(
     () => (hydrated ? items.filter((i) => favorites[i.id]).slice(0, 4) : []),
@@ -72,7 +66,7 @@ export function HomeClient({ library }: { library: Library }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          router.push(`/dictionary${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`);
+          router.push(`/docs${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`);
         }}
         className="flex min-h-14 items-center gap-3 rounded-2xl border-[1.5px] border-border bg-card px-4 text-muted-foreground focus-within:border-primary focus-within:ring-4 focus-within:ring-indigo-soft"
       >
@@ -98,7 +92,7 @@ export function HomeClient({ library }: { library: Library }) {
               key={`daily-${extra}`}
               initialQueue={buildQueue()}
               title="Từ mới hôm nay"
-              subtitle={`Mỗi ngày ${newPerDay} từ · đổi trong Hồ sơ`}
+              subtitle={`Mỗi ngày ${newPerDay} từ chưa học`}
               emptyMessage={
                 words.some((w) => !cards[w.id])
                   ? "Bạn đã học đủ từ mới hôm nay. Muốn học tiếp?"
@@ -115,40 +109,18 @@ export function HomeClient({ library }: { library: Library }) {
           <section className="flex flex-col gap-3.5 rounded-3xl bg-vermilion-soft p-5">
             <div className="flex items-center gap-3.5">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-vermilion text-white">
-                <Layers className="size-[22px]" aria-hidden />
+                <Camera className="size-[22px]" aria-hidden />
               </span>
               <div className="flex flex-col">
-                <h2 className="text-[17px] font-bold">
-                  {hydrated ? `${dueItems.length} từ đến hạn ôn` : "Ôn từ"}
-                </h2>
-                <span className="text-[13px] text-vermilion-ink">Ôn đúng lúc sắp quên để nhớ lâu</span>
+                <h2 className="text-[17px] font-bold">Thêm từ mới từ ảnh</h2>
+                <span className="text-[13px] text-vermilion-ink">Chụp trang sách, AI trích xuất rồi lưu vào bài học</span>
               </div>
             </div>
-            {dueItems.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {dueItems.slice(0, 4).map((d) => (
-                  <span key={d.id} className="flex items-baseline gap-1.5 rounded-lg bg-card px-3 py-1.5">
-                    <span className="jp text-base font-bold">{jpText(d)}</span>
-                    <span className="text-xs text-vermilion-ink">{d.meaning}</span>
-                  </span>
-                ))}
-                {dueItems.length > 4 && (
-                  <span className="flex items-center rounded-lg bg-card/60 px-3 text-[13px] font-bold text-vermilion-ink">
-                    +{dueItems.length - 4} từ
-                  </span>
-                )}
-              </div>
-            )}
             <Link
-              href="/review"
-              className={cn(
-                "flex min-h-12 items-center justify-center rounded-xl text-[15px] font-extrabold",
-                dueItems.length > 0
-                  ? "bg-vermilion text-white shadow-[0_4px_0_var(--vermilion-ink)]"
-                  : "border-[1.5px] border-vermilion/30 bg-card text-vermilion-ink"
-              )}
+              href="/import"
+              className="flex min-h-12 items-center justify-center rounded-xl bg-vermilion text-[15px] font-extrabold text-white shadow-[0_4px_0_var(--vermilion-ink)]"
             >
-              {dueItems.length > 0 ? "Ôn ngay" : "Mở trang ôn từ"}
+              Nhập từ ảnh
             </Link>
           </section>
 
@@ -210,9 +182,7 @@ export function HomeClient({ library }: { library: Library }) {
         <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-2.5 rounded-3xl border border-border bg-card p-5 sm:p-6">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="text-[17px] font-bold">Từ yêu thích</h2>
-            <Link href="/notebook?list=favorites" className="text-[13px] font-bold text-primary">
-              Xem sổ từ
-            </Link>
+            <span className="text-[13px] text-muted-foreground">{favoriteItems.length > 0 ? "Mới nhất" : ""}</span>
           </div>
           {favoriteItems.length === 0 ? (
             <p className="py-4 text-sm leading-relaxed text-muted-foreground">
@@ -232,8 +202,8 @@ export function HomeClient({ library }: { library: Library }) {
               ))}
             </ul>
           )}
-          <Link href="/notebook" className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-primary">
-            Mở sổ từ <ArrowRight className="size-4" aria-hidden />
+          <Link href="/docs" className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-primary">
+            Mở tài liệu <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
       </section>
@@ -248,7 +218,7 @@ function Header({ hello }: { hello: { vi: string; jp: string } }) {
         {hello.vi}!
       </h1>
       <p className="text-[15px] text-muted-foreground" suppressHydrationWarning>
-        <span className="jp" suppressHydrationWarning>{hello.jp}</span> · Hôm nay học vài từ mới và ôn những từ sắp quên nhé.
+        <span className="jp" suppressHydrationWarning>{hello.jp}</span> · Hôm nay học vài từ mới nhé.
       </p>
     </header>
   );

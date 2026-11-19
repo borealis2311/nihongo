@@ -31,7 +31,7 @@ export function FlashcardDeck({
   onMore,
   moreLabel = "Học thêm 5 từ",
 }: FlashcardDeckProps) {
-  const [queue] = useState(initialQueue);
+  const [queue, setQueue] = useState(initialQueue);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [againCount, setAgainCount] = useState(0);
@@ -53,7 +53,11 @@ export function FlashcardDeck({
   const answer = (known: boolean) => {
     if (!item) return;
     grade(item.id, known ? Rating.Good : Rating.Again);
-    if (!known) setAgainCount((c) => c + 1);
+    if (!known) {
+      // Thẻ “chưa nhớ” được đưa xuống cuối lượt để gặp lại ngay trong lượt này.
+      setAgainCount((c) => c + 1);
+      setQueue((q) => [...q, item]);
+    }
     setFlipped(false);
     setIndex((i) => i + 1);
   };
@@ -104,16 +108,16 @@ export function FlashcardDeck({
             </h3>
             <p className="text-sm text-matcha-ink">
               {againCount > 0
-                ? `${againCount} từ “chưa nhớ” sẽ quay lại trong phần Ôn từ.`
-                : "Các từ này đã được xếp lịch ôn."}
+                ? `Bạn đã gặp lại ${againCount} lần những từ “chưa nhớ” cho tới khi nhớ.`
+                : "Bạn nhớ hết ngay lần đầu, giỏi lắm!"}
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-2.5">
             <Link
-              href="/review"
+              href="/topics"
               className="inline-flex min-h-11 items-center rounded-xl bg-matcha px-5 text-sm font-bold text-white shadow-[0_4px_0_var(--matcha-ink)]"
             >
-              Đi ôn từ
+              Xem chủ đề khác
             </Link>
             {onMore && (
               <button
@@ -176,7 +180,7 @@ export function FlashcardDeck({
             </button>
           </div>
           <p className="text-[13px] text-muted-foreground">
-            Từ “Chưa nhớ” sẽ quay lại sớm trong phần Ôn từ. Bấm dấu trang để thêm vào Yêu thích.
+            Từ “Chưa nhớ” sẽ lặp lại ở cuối lượt. Bấm dấu trang để thêm vào Yêu thích.
           </p>
         </>
       )}
