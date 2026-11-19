@@ -16,27 +16,26 @@ Mở http://localhost:3000. Nếu Strapi chưa chạy, các trang vẫn mở đ�
 
 | Đường dẫn | Nội dung |
 | --- | --- |
-| `/` | Trang chủ: tra nhanh, thẻ “Từ mới hôm nay”, số thẻ đến hạn, đoán nghĩa nhanh, chủ đề, câu mới thêm, từ yêu thích |
-| `/topics` | Mỗi bài học trong CMS là một chủ đề; lọc theo chương, xem trước, học hoặc ôn theo bài |
-| `/learn?lesson=<id>` | Học thẻ chưa học của một bài |
-| `/review` | Ôn theo lịch FSRS với 4 kiểu: lật thẻ, trắc nghiệm, nghe, gõ kana |
-| `/dictionary` | Tra theo tiếng Việt (có/không dấu), romaji hoặc kana; tra bằng giọng nói |
-| `/notebook` | Sổ từ: tab Từ vựng / Mẫu câu, lọc theo bài, Yêu thích, mức nhớ; thêm nhanh vào Strapi |
-| `/profile` | Thống kê, cài đặt (số từ mới/ngày, romaji, tự phát âm, giọng đọc, tốc độ, giảm chuyển động, giao diện tối), xuất CSV, sao lưu/khôi phục tiến trình |
-| `/docs/...`, `/import` | Tài liệu bài học và nhập từ ảnh bằng GPT-4o (giữ nguyên như trước) |
+| `/` | Trang chủ: tra nhanh (mở kết quả trong Tài liệu), thẻ “Từ mới hôm nay”, đoán nghĩa nhanh, nhập từ ảnh, chủ đề, câu mới thêm, từ yêu thích |
+| `/topics` | Mỗi bài học trong CMS là một chủ đề; lọc theo chương, xem trước, học bằng thẻ, mở tài liệu hoặc thêm từ ảnh |
+| `/learn?lesson=<id>` | Học thẻ chưa học của một bài (mở từ Chủ đề / Tài liệu) |
+| `/docs` | Tài liệu: tổng quan chương – bài và tìm kiếm toàn bộ từ/câu (tiếng Việt có/không dấu, romaji, kana) |
+| `/docs/[chapter]/[lesson]` | Trang bài học: giới thiệu, mẹo, tab Từ vựng / Mẫu câu, lọc trong bài, nghe phát âm, yêu thích, bài trước/sau |
+| `/import` | Nhập từ ảnh 3 bước: chọn bài → gửi ảnh (QR điện thoại hoặc kéo thả) → kiểm tra, tự điền katakana/romaji, lưu vào Strapi |
+| `/import/capture/[id]` | Trang chụp ảnh mở trên điện thoại sau khi quét QR |
 
 ## Thư viện chính
 
 - **Tailwind CSS v4 + shadcn/ui (style `base-nova`, Base UI)** — component trong `src/components/ui`
 - **motion** — lật thẻ, chuyển thẻ, hiệu ứng đúng/sai
-- **ts-fsrs** — thuật toán lặp lại ngắt quãng cho phần Ôn từ
-- **zustand** (persist) — lưu tiến trình học, yêu thích, cài đặt vào `localStorage` (khoá `nihongo-study`)
-- **wanakana** — chuyển romaji ⇄ kana khi tra từ, gõ đáp án và thêm từ
-- **Web Speech API** — đọc to tiếng Nhật (`speechSynthesis`) và tra từ bằng giọng nói (`SpeechRecognition`), không cần API key
+- **ts-fsrs** — ghi nhận thẻ đã học / chưa học (FSRS)
+- **zustand** (persist) — lưu thẻ đã học, yêu thích, cài đặt vào `localStorage` (khoá `nihongo-study`)
+- **wanakana** — chuyển romaji ⇄ kana khi tìm kiếm và tự điền cách đọc khi nhập từ ảnh
+- **Web Speech API** — đọc to tiếng Nhật (`speechSynthesis`), không cần API key
 - **sonner** — thông báo
 
 ## Dữ liệu
 
 - Trường `word` của Word trong Strapi là **nghĩa tiếng Việt**; chữ Nhật lấy từ `hiragana` (hoặc `katakana`), `sentence = true` là mẫu câu.
-- “Thêm nhanh” trong Sổ từ gọi route có sẵn `POST /api/words/bulk`, nên cần `STRAPI_API_TOKEN` có quyền tạo Word.
-- Tiến trình ôn chỉ nằm trên trình duyệt hiện tại; dùng “Sao lưu tiến trình” ở trang Hồ sơ để chuyển sang máy khác.
+- Nhập từ ảnh gọi `POST /api/extract-words` (GPT-4o, cần `OPENAI_API_KEY`) rồi `POST /api/words/bulk` (cần `STRAPI_API_TOKEN` có quyền tạo Word).
+- Thẻ đã học và yêu thích chỉ nằm trên trình duyệt hiện tại.

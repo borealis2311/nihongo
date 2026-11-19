@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BookText, Play } from "lucide-react";
+import { BookText, Camera, Play } from "lucide-react";
 import { motion } from "motion/react";
 import { EmptyLibrary } from "@/components/app/empty-library";
 import { PageHeader } from "@/components/app/page-header";
@@ -140,10 +140,10 @@ export function TopicsClient({ library, initialLessonId }: { library: Library; i
                 <Play className="size-4" fill="currentColor" aria-hidden /> Học thẻ chưa học
               </Link>
               <Link
-                href={`/review?lesson=${selected.id}`}
-                className="inline-flex min-h-12 flex-[1_1_120px] items-center justify-center rounded-xl border-[1.5px] border-border text-[15px] font-bold hover:bg-muted"
+                href={`/import?lesson=${selected.id}`}
+                className="inline-flex min-h-12 flex-[1_1_120px] items-center justify-center gap-2 rounded-xl border-[1.5px] border-border text-[15px] font-bold hover:bg-muted"
               >
-                Ôn bài này
+                <Camera className="size-4" aria-hidden /> Thêm từ ảnh
               </Link>
               <Link
                   href={`/docs/${selected.chapterSlug}/${selected.slug}`}

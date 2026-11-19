@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { useStudy } from "@/lib/study-store";
 
 /* ------------------------------------------------------------------ */
@@ -66,94 +66,4 @@ export function useSpeak() {
   );
 
   return { speak, speakingText };
-}
-
-/* ------------------------------------------------------------------ */
-/* Nhận diện giọng nói (Speech-to-Text) để tra từ bằng giọng.          */
-/* ------------------------------------------------------------------ */
-
-interface RecognitionResultEvent {
-  results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>;
-}
-
-interface RecognitionLike {
-  lang: string;
-  interimResults: boolean;
-  continuous: boolean;
-  maxAlternatives: number;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((e: RecognitionResultEvent) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-}
-
-type RecognitionCtor = new () => RecognitionLike;
-
-function getRecognitionCtor(): RecognitionCtor | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
-
-export function useSpeechRecognition(onFinal: (text: string) => void) {
-  const supported = useSyncExternalStore(
-    () => () => {},
-    () => getRecognitionCtor() !== null,
-    () => false
-  );
-  const [listening, setListening] = useState(false);
-  const [interim, setInterim] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const recRef = useRef<RecognitionLike | null>(null);
-  const onFinalRef = useRef(onFinal);
-
-  useEffect(() => {
-    onFinalRef.current = onFinal;
-  }, [onFinal]);
-
-  useEffect(() => () => recRef.current?.abort(), []);
-
-  const start = useCallback((lang: "ja-JP" | "vi-VN") => {
-    const Ctor = getRecognitionCtor();
-    if (!Ctor) return;
-    recRef.current?.abort();
-    const rec = new Ctor();
-    rec.lang = lang;
-    rec.interimResults = true;
-    rec.continuous = false;
-    rec.maxAlternatives = 1;
-    rec.onresult = (e) => {
-      let text = "";
-      let final = false;
-      for (let i = 0; i < e.results.length; i++) {
-        text += e.results[i][0].transcript;
-        if (e.results[i].isFinal) final = true;
-      }
-      setInterim(text);
-      if (final) onFinalRef.current(text.trim());
-    };
-    rec.onerror = (e) => {
-      setError(
-        e.error === "not-allowed"
-          ? "Trình duyệt chưa cho phép dùng micro."
-          : e.error === "no-speech"
-            ? "Không nghe thấy giọng nói, thử lại nhé."
-            : "Không nhận diện được giọng nói."
-      );
-    };
-    rec.onend = () => {
-      setListening(false);
-      setInterim("");
-    };
-    recRef.current = rec;
-    setError(null);
-    setListening(true);
-    rec.start();
-  }, []);
-
-  const stop = useCallback(() => recRef.current?.stop(), []);
-
-  return { supported, listening, interim, error, start, stop };
 }
