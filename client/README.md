@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nihongo Việt — client
 
-## Getting Started
+Ứng dụng Next.js để lưu trữ và học từ vựng, mẫu câu tiếng Nhật. Nội dung (chương → bài học → từ/câu) nằm trong Strapi (`../cms`); tiến trình học cá nhân được lưu trên trình duyệt.
 
-First, run the development server:
+## Chạy thử
 
 ```bash
+cp .env.example .env   # điền STRAPI_URL, STRAPI_API_TOKEN, OPENAI_API_KEY
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở http://localhost:3000. Nếu Strapi chưa chạy, các trang vẫn mở được và hiện trạng thái “Chưa kết nối được CMS”.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Các trang
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Đường dẫn | Nội dung |
+| --- | --- |
+| `/` | Trang chủ: tra nhanh, thẻ “Từ mới hôm nay”, số thẻ đến hạn, đoán nghĩa nhanh, chủ đề, câu mới thêm, từ yêu thích |
+| `/topics` | Mỗi bài học trong CMS là một chủ đề; lọc theo chương, xem trước, học hoặc ôn theo bài |
+| `/learn?lesson=<id>` | Học thẻ chưa học của một bài |
+| `/review` | Ôn theo lịch FSRS với 4 kiểu: lật thẻ, trắc nghiệm, nghe, gõ kana |
+| `/dictionary` | Tra theo tiếng Việt (có/không dấu), romaji hoặc kana; tra bằng giọng nói |
+| `/notebook` | Sổ từ: tab Từ vựng / Mẫu câu, lọc theo bài, Yêu thích, mức nhớ; thêm nhanh vào Strapi |
+| `/profile` | Thống kê, cài đặt (số từ mới/ngày, romaji, tự phát âm, giọng đọc, tốc độ, giảm chuyển động, giao diện tối), xuất CSV, sao lưu/khôi phục tiến trình |
+| `/docs/...`, `/import` | Tài liệu bài học và nhập từ ảnh bằng GPT-4o (giữ nguyên như trước) |
 
-## Learn More
+## Thư viện chính
 
-To learn more about Next.js, take a look at the following resources:
+- **Tailwind CSS v4 + shadcn/ui (style `base-nova`, Base UI)** — component trong `src/components/ui`
+- **motion** — lật thẻ, chuyển thẻ, hiệu ứng đúng/sai
+- **ts-fsrs** — thuật toán lặp lại ngắt quãng cho phần Ôn từ
+- **zustand** (persist) — lưu tiến trình học, yêu thích, cài đặt vào `localStorage` (khoá `nihongo-study`)
+- **wanakana** — chuyển romaji ⇄ kana khi tra từ, gõ đáp án và thêm từ
+- **Web Speech API** — đọc to tiếng Nhật (`speechSynthesis`) và tra từ bằng giọng nói (`SpeechRecognition`), không cần API key
+- **sonner** — thông báo
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Dữ liệu
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Trường `word` của Word trong Strapi là **nghĩa tiếng Việt**; chữ Nhật lấy từ `hiragana` (hoặc `katakana`), `sentence = true` là mẫu câu.
+- “Thêm nhanh” trong Sổ từ gọi route có sẵn `POST /api/words/bulk`, nên cần `STRAPI_API_TOKEN` có quyền tạo Word.
+- Tiến trình ôn chỉ nằm trên trình duyệt hiện tại; dùng “Sao lưu tiến trình” ở trang Hồ sơ để chuyển sang máy khác.
